@@ -1,11 +1,24 @@
 {
   "app": {
-    "signingConfigs": [],
+    "signingConfigs": [
+      {
+        "name": "default",
+        "type": "HarmonyOS",
+        "material": {
+          "certpath": "/Users/liqiang/.ohos/config/default_OxHornCampus_BiTWsGpoZ3VqCTYzAQf_Sr87il2tFLb5ciuGthhlyGw=.cer",
+          "storePassword": "0000001A3328A166A69414ED80570B218F53AB26CC6AF26F9C7D974197F766D2B3EBEF07E9649BC7F932",
+          "keyAlias": "debugKey",
+          "keyPassword": "0000001AD801048A73A0530BD57B3F7DD5FACE4535A993CB1619FFFB8935F3E0B5FF04BA00357E9A224B",
+          "profile": "/Users/liqiang/.ohos/config/default_OxHornCampus_BiTWsGpoZ3VqCTYzAQf_Sr87il2tFLb5ciuGthhlyGw=.p7b",
+          "signAlg": "SHA256withECDSA",
+          "storeFile": "/Users/liqiang/.ohos/config/default_OxHornCampus_BiTWsGpoZ3VqCTYzAQf_Sr87il2tFLb5ciuGthhlyGw=.p12"
+        }
+      }
+    ],
     "products": [
       {
         "name": "default",
         "signingConfig": "default",
-        "compileSdkVersion": "5.0.0(12)",
         "compatibleSdkVersion": "5.0.0(12)",
         "runtimeOS": "HarmonyOS",
       }
