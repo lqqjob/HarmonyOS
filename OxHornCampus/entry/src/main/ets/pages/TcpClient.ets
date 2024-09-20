@@ -91,7 +91,9 @@ export default async function initTcp() {
     address = ipString + ".1"
   }
   let connectAddress: GeneratedObjectLiteralInterface_1 = {
-    address: "homemate-dev.orvibo.com",
+    // address: "homemate-dev.orvibo.com",
+    address: "172.16.166.62",
+
     port: 10001,
     family: 1
   };
@@ -129,19 +131,23 @@ export async function sendTest(msg: APMessageBody): Promise<void> {
   let strUtil: AegStrUtil = new AegStrUtil()
   //数据头
   let hd = 'hd'
-  let hdByte: Uint8Array = strUtil.ohAegStringToUint8Array(hd)
+  let hdString:string = strUtil.ohAegStringToHexString(hd)
+  let hdByte = strUtil.ohAegStringToUint8Array(hdString)
   let type = 'pk'
-  let typeByte: Uint8Array = strUtil.ohAegStringToUint8Array(type)
+  let typeString:string = strUtil.ohAegStringToHexString(type)
+  let typeByte: Uint8Array = strUtil.ohAegStringToUint8Array(typeString)
   let msgBodyString = JSON.stringify(msg)
-  let msgBodyView = strUtil.ohAegStringToUint8Array(msgBodyString);
+  let msgBodyHexString = strUtil.ohAegStringToHexString(msgBodyString);
   let keyHex = strUtil.ohAegStringToHexString("khggd54865SNJHGF");
   //加密的消息
-  let msgBodyEncode: Uint8Array = await AegAesCbc.ohAegAesCbcEncText(msgBodyView, keyHex)
+  let msgBodyEncode: Uint8Array = await AegAesCbc.ohAegAesCbcEncText(msgBodyHexString, keyHex)
+  let msgString = strUtil.ohAegUint8ArraytoHexString(msgBodyEncode)
   //CRC校验
   let crc = crc32(msgBodyEncode)
   //处理sessionId
   let sessionId = "kjdbvjdfbkvdsj"
-  let sessionIdByte = strUtil.ohAegStringToUint8Array(sessionId);
+  let sessionIdString = strUtil.ohAegStringToHexString(sessionId);
+  let sessionIdByte = strUtil.ohAegStringToUint8Array(sessionIdString);
   let sessionResult = stringToData(sessionIdByte, 32);
   //组装
   let totalLength: number = msgBodyEncode.length + 42
@@ -149,22 +155,23 @@ export async function sendTest(msg: APMessageBody): Promise<void> {
   const resultBuffer = new ArrayBuffer(totalLength);
   const resultView = new Uint8Array(resultBuffer);
   let offset = 0;
-  resultView.set(hdByte, offset)
+  // resultView.set(hdByte, offset)
   offset += hdByte.length;
   let length1 = numberToUint8ArrayBigEndian(2, 2);
   resultView.set(length1, offset)
   offset += length1.length;
   resultView.set(typeByte, offset)
-  offset += typeByte.length
-  let length2 = numberToUint8ArrayBigEndian(crc, 4);
-  resultView.set(length2, offset)
-  offset += length2.length
-  resultView.set(sessionResult, offset)
-  offset += sessionResult.length;
-  resultView.set(msgBodyView, offset)
-
+  // offset += typeByte.length
+  // let length2 = numberToUint8ArrayBigEndian(crc, 4);
+  // resultView.set(length2, offset)
+  // offset += length2.length
+  // resultView.set(sessionResult, offset)
+  // offset += sessionResult.length;
+  // resultView.set(msgBodyView, offset)
+let sendString = hdString+typeString+msgString
+  let sendByte: Uint8Array = hexToBytes(sendString)
   let tcpSendOptions: socket.TCPSendOptions = {
-    data: "test"
+    data: sendByte.buffer
   }
   tcp.send(tcpSendOptions).then(() => {
     console.log('HomeMate send success');
@@ -174,7 +181,13 @@ export async function sendTest(msg: APMessageBody): Promise<void> {
 
 
 }
-
+function hexToBytes(hex: string): Uint8Array {
+  const bytes = new Uint8Array(Math.ceil(hex.length / 2));
+  for (let i = 0; i < bytes.length; i++) {
+    bytes[i] = parseInt(hex.substr(i * 2, 2), 16);
+  }
+  return bytes;
+}
 function stringToData(encodedString: Uint8Array, len: number): Uint8Array {
 
   // 创建一个目标长度的 ArrayBuffer
