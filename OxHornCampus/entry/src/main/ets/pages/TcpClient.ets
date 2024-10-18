@@ -2,6 +2,7 @@ import socket from '@ohos.net.socket'
 import wifiManager from '@ohos.wifiManager'
 import { AegStrUtil, AegAesCbc } from '@hw-agconnect/petal-aegis'
 import { BusinessError } from '@kit.BasicServicesKit';
+import { cryptoFramework } from '@kit.CryptoArchitectureKit';
 
 // https://developer.huawei.com/consumer/cn/doc/harmonyos-guides-V5/socket-connection-V5#%E5%BA%94%E7%94%A8%E9%80%9A%E8%BF%87-tcp-socket-server-%E8%BF%9B%E8%A1%8C%E6%95%B0%E6%8D%AE%E4%BC%A0%E8%BE%93
 let tcp = socket.constructTCPSocketInstance();
@@ -92,9 +93,8 @@ export default async function initTcp() {
   }
   let connectAddress: GeneratedObjectLiteralInterface_1 = {
     // address: "homemate-dev.orvibo.com",
-    address: "172.16.166.62",
-
-    port: 10001,
+    address: "172.16.162.125",
+    port: 10002,
     family: 1
   };
 
@@ -131,47 +131,49 @@ export async function sendTest(msg: APMessageBody): Promise<void> {
   let strUtil: AegStrUtil = new AegStrUtil()
   //数据头
   let hd = 'hd'
-  let hdString:string = strUtil.ohAegStringToHexString(hd)
-  let hdByte = strUtil.ohAegStringToUint8Array(hdString)
+  let hdByte = strUtil.ohAegStringToUint8Array(hd)
+
+  //加密类型
   let type = 'pk'
-  let typeString:string = strUtil.ohAegStringToHexString(type)
-  let typeByte: Uint8Array = strUtil.ohAegStringToUint8Array(typeString)
+  let typeByte: Uint8Array = strUtil.ohAegStringToUint8Array(type)
+
+  //消息体
   let msgBodyString = JSON.stringify(msg)
-  let msgBodyHexString = strUtil.ohAegStringToHexString(msgBodyString);
-  let keyHex = strUtil.ohAegStringToHexString("khggd54865SNJHGF");
+  let msgBodyByte= strUtil.ohAegStringToUint8Array(msgBodyString)
+  let key = strUtil.ohAegStringToUint8Array("khggd54865SNJHGF");
   //加密的消息
-  let msgBodyEncode: Uint8Array = await AegAesCbc.ohAegAesCbcEncText(msgBodyHexString, keyHex)
-  let msgString = strUtil.ohAegUint8ArraytoHexString(msgBodyEncode)
+  let msgBodyEncode: Uint8Array = await encrypt(key,msgBodyByte,new Uint8Array());
+  let msgBodyNonEncode: Uint8Array = strUtil.ohAegStringToUint8Array(msgBodyString)
+
   //CRC校验
   let crc = crc32(msgBodyEncode)
   //处理sessionId
   let sessionId = "kjdbvjdfbkvdsj"
-  let sessionIdString = strUtil.ohAegStringToHexString(sessionId);
-  let sessionIdByte = strUtil.ohAegStringToUint8Array(sessionIdString);
+  let sessionIdByte = strUtil.ohAegStringToUint8Array(sessionId);
   let sessionResult = stringToData(sessionIdByte, 32);
-  //组装
+  //计算总长度
   let totalLength: number = msgBodyEncode.length + 42
 
   const resultBuffer = new ArrayBuffer(totalLength);
   const resultView = new Uint8Array(resultBuffer);
   let offset = 0;
-  // resultView.set(hdByte, offset)
+  resultView.set(hdByte, offset)
   offset += hdByte.length;
   let length1 = numberToUint8ArrayBigEndian(2, 2);
   resultView.set(length1, offset)
   offset += length1.length;
   resultView.set(typeByte, offset)
-  // offset += typeByte.length
-  // let length2 = numberToUint8ArrayBigEndian(crc, 4);
-  // resultView.set(length2, offset)
-  // offset += length2.length
-  // resultView.set(sessionResult, offset)
-  // offset += sessionResult.length;
-  // resultView.set(msgBodyView, offset)
-let sendString = hdString+typeString+msgString
-  let sendByte: Uint8Array = hexToBytes(sendString)
+  offset += typeByte.length
+  let crcByte = numberToUint8ArrayBigEndian(crc, 4);
+  resultView.set(crcByte, offset)
+  offset += crcByte.length
+  resultView.set(sessionResult, offset)
+  offset += sessionResult.length;
+  resultView.set(msgBodyEncode, offset)
+  // resultView.set(msgBodyNonEncode, offset)
+  let totalResultLength = resultView.length
   let tcpSendOptions: socket.TCPSendOptions = {
-    data: sendByte.buffer
+    data: resultView.buffer
   }
   tcp.send(tcpSendOptions).then(() => {
     console.log('HomeMate send success');
@@ -181,6 +183,22 @@ let sendString = hdString+typeString+msgString
 
 
 }
+
+async function encrypt(password: Uint8Array, clearText: Uint8Array, iv: Uint8Array): Promise<Uint8Array> {
+  try {
+    let generator = cryptoFramework.createSymKeyGenerator("AES128")
+    let key = await generator.convertKey({ data: password })
+    let paramsSpec: cryptoFramework.IvParamsSpec = { iv: { data: iv }, algName: "IvParamsSpec" }
+    let aesCipher = cryptoFramework.createCipher("AES128|ECB|PKCS7")
+    await aesCipher.init(cryptoFramework.CryptoMode.ENCRYPT_MODE, key, paramsSpec)
+    let encryptText = await aesCipher.doFinal({ data: clearText })
+    return encryptText.data;
+  } catch (e) {
+    return new Uint8Array()
+
+  }
+}
+
 function hexToBytes(hex: string): Uint8Array {
   const bytes = new Uint8Array(Math.ceil(hex.length / 2));
   for (let i = 0; i < bytes.length; i++) {
@@ -188,6 +206,7 @@ function hexToBytes(hex: string): Uint8Array {
   }
   return bytes;
 }
+
 function stringToData(encodedString: Uint8Array, len: number): Uint8Array {
 
   // 创建一个目标长度的 ArrayBuffer
