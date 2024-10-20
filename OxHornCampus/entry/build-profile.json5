@@ -1,7 +1,11 @@
-//当前的模块信息 、编译信息配置项，包括buildOption、targets配置等。
 {
   "apiType": "stageMode",
   "buildOption": {
+    "sourceOption": {
+      "workers": [
+        './src/main/ets/workers/TCPWorker.ets'
+      ]
+    }
   },
   "buildOptionSet": [
     {

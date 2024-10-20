@@ -1,6 +1,10 @@
 //模块的配置信息，主要包含HAP包的配置信息、应用/服务在具体设备上的配置信息以及应用/服务的全局配置信息
 {
   "module": {
+    "requestPermissions": [
+      {"name": "ohos.permission.INTERNET"},
+      {"name": "ohos.permission.GET_WIFI_INFO"}
+    ],
     "name": "entry",
     "type": "entry",
     "description": "$string:module_desc",
