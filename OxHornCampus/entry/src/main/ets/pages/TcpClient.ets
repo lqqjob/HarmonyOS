@@ -1,11 +1,13 @@
 import socket from '@ohos.net.socket'
 import wifiManager from '@ohos.wifiManager'
 import { AegStrUtil, AegAesCbc } from '@hw-agconnect/petal-aegis'
-import { BusinessError } from '@kit.BasicServicesKit';
+import { BusinessError, print } from '@kit.BasicServicesKit';
 import { cryptoFramework } from '@kit.CryptoArchitectureKit';
+import { buffer } from '@kit.ArkTS';
 
 // https://developer.huawei.com/consumer/cn/doc/harmonyos-guides-V5/socket-connection-V5#%E5%BA%94%E7%94%A8%E9%80%9A%E8%BF%87-tcp-socket-server-%E8%BF%9B%E8%A1%8C%E6%95%B0%E6%8D%AE%E4%BC%A0%E8%BE%93
 let tcp = socket.constructTCPSocketInstance();
+ let publicKey:string = "khggd54865SNJHGF"
 
 
 interface GeneratedObjectLiteralInterface_1 {
@@ -29,7 +31,6 @@ interface APMessageBody {
 
 
 export default async function initTcp() {
-
   let state = await tcp.getState();
   if (state.isConnected) {
     let params: APMessageBody = {
@@ -48,16 +49,6 @@ export default async function initTcp() {
     return;
   }
 
-  // let bindAddr: socket.NetAddress = {
-  //   // address: '119.91.241.210',
-  //   address: "0.0.0.0",
-  //   port: 10001
-  // }
-  // tcp.bind(bindAddr).then(() => {
-  //   console.log('bind success');
-  // }).catch((err: BusinessError) => {
-  //   console.log('bind fail');
-  // });
 
   tcp.on("message", value => {
     console.log('HomeMate getRemoteAddressfail');
@@ -92,9 +83,10 @@ export default async function initTcp() {
     address = ipString + ".1"
   }
   let connectAddress: GeneratedObjectLiteralInterface_1 = {
-    // address: "homemate-dev.orvibo.com",
-    address: "172.16.162.125",
-    port: 10002,
+    address: "homemate-dev.orvibo.com",
+    // address: "192.168.1.103",
+    // address:address,
+    port: 10001,
     family: 1
   };
 
@@ -117,17 +109,21 @@ export default async function initTcp() {
 
 }
 
-function decoderWithData(originData: ArrayBuffer): void {
+async function decoderWithData(originData: ArrayBuffer): Promise<string>  {
   let strUtil: AegStrUtil = new AegStrUtil()
   let originDataView = new DataView(originData)
   let hdBuffer = originData.slice(0, 2)
   let hdView: Uint8Array = new Uint8Array(hdBuffer)
   let hd: string = strUtil.ohAegUint8ArrayToString(hdView)
-  console.log(hd);
+  let bodyBuffer = originData.slice(42, originDataView.byteLength)
+  let msgBodyDecode: Uint8Array = await decodeCrypt(publicKey,new Uint8Array(bodyBuffer))
+  let msgBodyString:string = strUtil.ohAegUint8ArrayToString(msgBodyDecode)
+
+  return msgBodyString
+
 
 }
-
-export async function sendTest(msg: APMessageBody): Promise<void> {
+async function sendTest(msg: APMessageBody): Promise<void> {
   let strUtil: AegStrUtil = new AegStrUtil()
   //数据头
   let hd = 'hd'
@@ -148,8 +144,10 @@ export async function sendTest(msg: APMessageBody): Promise<void> {
   //CRC校验
   let crc = crc32(msgBodyEncode)
   //处理sessionId
-  let sessionId = "kjdbvjdfbkvdsj"
+  // let sessionId = "00000000000000000000000000000000"
+  let sessionId = "kjdbvjdfbkvdsj                  "
   let sessionIdByte = strUtil.ohAegStringToUint8Array(sessionId);
+  console.log("sessionIdByte.buffer.byteLength");
   let sessionResult = stringToData(sessionIdByte, 32);
   //计算总长度
   let totalLength: number = msgBodyEncode.length + 42
@@ -159,7 +157,7 @@ export async function sendTest(msg: APMessageBody): Promise<void> {
   let offset = 0;
   resultView.set(hdByte, offset)
   offset += hdByte.length;
-  let length1 = numberToUint8ArrayBigEndian(2, 2);
+  let length1 = numberToUint8ArrayBigEndian(totalLength, 2);
   resultView.set(length1, offset)
   offset += length1.length;
   resultView.set(typeByte, offset)
@@ -170,8 +168,6 @@ export async function sendTest(msg: APMessageBody): Promise<void> {
   resultView.set(sessionResult, offset)
   offset += sessionResult.length;
   resultView.set(msgBodyEncode, offset)
-  // resultView.set(msgBodyNonEncode, offset)
-  let totalResultLength = resultView.length
   let tcpSendOptions: socket.TCPSendOptions = {
     data: resultView.buffer
   }
@@ -183,9 +179,13 @@ export async function sendTest(msg: APMessageBody): Promise<void> {
 
 
 }
-
+// 字符串转成字节流
+function stringToUint8Array(str: string) {
+  return new Uint8Array(buffer.from(str, 'utf-8').buffer);
+}
 async function encrypt(password: Uint8Array, clearText: Uint8Array, iv: Uint8Array): Promise<Uint8Array> {
   try {
+
     let generator = cryptoFramework.createSymKeyGenerator("AES128")
     let key = await generator.convertKey({ data: password })
     let paramsSpec: cryptoFramework.IvParamsSpec = { iv: { data: iv }, algName: "IvParamsSpec" }
@@ -195,18 +195,22 @@ async function encrypt(password: Uint8Array, clearText: Uint8Array, iv: Uint8Arr
     return encryptText.data;
   } catch (e) {
     return new Uint8Array()
-
   }
 }
-
-function hexToBytes(hex: string): Uint8Array {
-  const bytes = new Uint8Array(Math.ceil(hex.length / 2));
-  for (let i = 0; i < bytes.length; i++) {
-    bytes[i] = parseInt(hex.substr(i * 2, 2), 16);
+async function decodeCrypt(password: string, clearText: Uint8Array): Promise<Uint8Array> {
+  try {
+    let passwordByte = stringToUint8Array(password)
+    let generator = cryptoFramework.createSymKeyGenerator("AES128")
+    let key = await generator.convertKey({ data: passwordByte })
+    let paramsSpec: cryptoFramework.IvParamsSpec = { iv: { data: new Uint8Array() }, algName: "IvParamsSpec" }
+    let aesCipher = cryptoFramework.createCipher("AES128|ECB|PKCS7")
+    await aesCipher.init(cryptoFramework.CryptoMode.DECRYPT_MODE, key, paramsSpec)
+    let encryptText = await aesCipher.doFinal({ data: clearText })
+    return encryptText.data;
+  } catch (e) {
+    return new Uint8Array()
   }
-  return bytes;
 }
-
 function stringToData(encodedString: Uint8Array, len: number): Uint8Array {
 
   // 创建一个目标长度的 ArrayBuffer
