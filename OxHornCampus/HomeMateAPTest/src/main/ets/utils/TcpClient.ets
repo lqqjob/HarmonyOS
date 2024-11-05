@@ -1,7 +1,7 @@
 import socket from '@ohos.net.socket'
 import wifiManager from '@ohos.wifiManager'
-import { AegStrUtil, AegAesCbc } from '@hw-agconnect/petal-aegis'
-import { BusinessError, print } from '@kit.BasicServicesKit';
+import { AegStrUtil} from '@hw-agconnect/petal-aegis'
+import { BusinessError} from '@kit.BasicServicesKit';
 import { cryptoFramework } from '@kit.CryptoArchitectureKit';
 import { buffer } from '@kit.ArkTS';
 
@@ -83,10 +83,8 @@ export default async function initTcp() {
     address = ipString + ".1"
   }
   let connectAddress: GeneratedObjectLiteralInterface_1 = {
-    address: "homemate-dev.orvibo.com",
-    // address: "192.168.1.103",
-    // address:address,
-    port: 10001,
+    address:address,
+    port: 8295,
     family: 1
   };
 
@@ -138,12 +136,9 @@ async function sendTest(msg: APMessageBody): Promise<void> {
   let key = strUtil.ohAegStringToUint8Array("khggd54865SNJHGF");
   //加密的消息
   let msgBodyEncode: Uint8Array = await encrypt(key,msgBodyByte,new Uint8Array());
-  let msgBodyNonEncode: Uint8Array = strUtil.ohAegStringToUint8Array(msgBodyString)
 
   //CRC校验
   let crc = crc32(msgBodyEncode)
-  //处理sessionId
-  // let sessionId = "00000000000000000000000000000000"
   let sessionId = "kjdbvjdfbkvdsj                  "
   let sessionIdByte = strUtil.ohAegStringToUint8Array(sessionId);
   console.log("sessionIdByte.buffer.byteLength");
@@ -171,11 +166,10 @@ async function sendTest(msg: APMessageBody): Promise<void> {
     data: resultView.buffer
   }
   tcp.send(tcpSendOptions).then(() => {
-    console.log('HomeMate send success');
+    console.log('HomeMate send success')
   }).catch((err: BusinessError) => {
-    console.log('HomeMate send fail');
-  });
-
+    console.log('HomeMate send fail')
+  })
 
 }
 // 字符串转成字节流
