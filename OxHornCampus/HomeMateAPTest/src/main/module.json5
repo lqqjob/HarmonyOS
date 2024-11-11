@@ -1,0 +1,19 @@
+{
+  "module": {
+    "requestPermissions": [
+      {"name": "ohos.permission.INTERNET"},
+      {"name": "ohos.permission.GET_WIFI_INFO"}
+    ],
+    "name": "HomeMateAPTest",
+    "type": "shared",
+    "description": "$string:shared_desc",
+    "deviceTypes": [
+      "phone",
+      "tablet",
+      "2in1",
+      "car"
+    ],
+    "deliveryWithInstall": true,
+    "pages": "$profile:main_pages"
+  }
+}

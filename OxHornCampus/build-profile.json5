@@ -44,6 +44,18 @@
           ]
         }
       ]
+    },
+    {
+      "name": "HomeMateAPTest",
+      "srcPath": "./HomeMateAPTest",
+      "targets": [
+        {
+          "name": "default",
+          "applyToProducts": [
+            "default"
+          ]
+        }
+      ]
     }
   ]
 }
