@@ -46,8 +46,8 @@
       ]
     },
     {
-      "name": "HomeMateAPTest",
-      "srcPath": "./HomeMateAPTest",
+      "name": "HomeMateAPSDK",
+      "srcPath": "./HomeMateAPSDK",
       "targets": [
         {
           "name": "default",

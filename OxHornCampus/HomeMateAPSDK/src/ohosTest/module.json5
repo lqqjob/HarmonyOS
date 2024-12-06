@@ -1,6 +1,6 @@
 {
   "module": {
-    "name": "HomeMateAPTest_test",
+    "name": "HomeMateAPSDK_test",
     "type": "feature",
     "deviceTypes": [
       "phone",

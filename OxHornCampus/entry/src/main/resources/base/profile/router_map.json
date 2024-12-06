@@ -1,0 +1,28 @@
+{
+  "routerMap": [
+    {
+      "name": "Second",
+      "pageSourceFile": "src/main/ets/pages/Second.ets",
+      "buildFunction": "SecondBuilder",
+      "data": {
+        "description": "this is pageOne"
+      }
+    },
+    {
+      "name": "GetWiFiListPage",
+      "pageSourceFile": "src/main/ets/pages/GetWiFiListPage.ets",
+      "buildFunction": "GetWiFiListPageBuilder",
+      "data": {
+        "description": "this is pageOne"
+      }
+    },
+    {
+      "name": "SetWiFiAndPassword",
+      "pageSourceFile": "src/main/ets/pages/SetWiFiAndPassword.ets",
+      "buildFunction": "SetWiFiAndPasswordBuilder",
+      "data": {
+        "description": "this is pageOne"
+      }
+    }
+  ]
+}

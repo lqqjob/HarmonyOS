@@ -3,7 +3,6 @@
   "buildOption": {
     "sourceOption": {
       "workers": [
-        './src/main/ets/workers/TCPWorker.ets'
       ]
     }
   },

@@ -4,7 +4,7 @@
       {"name": "ohos.permission.INTERNET"},
       {"name": "ohos.permission.GET_WIFI_INFO"}
     ],
-    "name": "HomeMateAPTest",
+    "name": "HomeMateAPSDK",
     "type": "shared",
     "description": "$string:shared_desc",
     "deviceTypes": [
