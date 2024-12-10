@@ -7,12 +7,12 @@ import { buffer, util, JSON, HashMap } from '@kit.ArkTS';
 import HmAPSDKInterface from "./HmAPSDKInterface"
 
 // https://developer.huawei.com/consumer/cn/doc/harmonyos-guides-V5/socket-connection-V5#%E5%BA%94%E7%94%A8%E9%80%9A%E8%BF%87-tcp-socket-server-%E8%BF%9B%E8%A1%8C%E6%95%B0%E6%8D%AE%E4%BC%A0%E8%BE%93
-let tcp = socket.constructTCPSocketInstance();
 let publicKey: string = "khggd54865SNJHGF"
 
-export type tcpCallback = (error?: BusinessError, data?: HashMap <string, string | number> | undefined) => void
+export type tcpCallback = (error?: BusinessError, data?: HashMap<string, string | number | object> | undefined) => void
 
 class HmTcpClient {
+  private tcp = socket.constructTCPSocketInstance();
   private callback?: tcpCallback
   private dataView?: Uint8Array
   private receiveDataLength: number = 0
@@ -23,29 +23,29 @@ class HmTcpClient {
       if (data.ssid == "HomeMate_AP") {
         this.initTCP(callback)
       } else {
-        this.didCallback(1, "请连接设备发出的 SSID")
+        this.didCallback(1, "请将手机 WiFi 连接到 HomeMate_AP")
       }
     });
   }
 
   private async initTCP(callback?: tcpCallback) {
-    let state = await tcp.getState();
+    let state = await this.tcp.getState();
     if (state.isConnected) {
       if (callback != undefined) {
         callback(undefined);
       }
       return;
     }
-    tcp.on("message", value => {
+    this.tcp.on("message", value => {
       let buffer = value.message
       this.parseWithData(buffer)
     })
-    tcp.on('error', (err: BusinessError) => {
+    this.tcp.on('error', (err: BusinessError) => {
       if (callback != undefined) {
         callback(err);
       }
     });
-    tcp.on("connect", () => {
+    this.tcp.on("connect", () => {
       if (callback != undefined) {
         callback(undefined)
       }
@@ -63,7 +63,7 @@ class HmTcpClient {
       port: 8295,
       family: 1
     }
-    tcp.connect({
+    this.tcp.connect({
       address: connectAddress, timeout: 6000
     }, err => {
       if (err) {
@@ -131,22 +131,22 @@ class HmTcpClient {
           this.dataView.set(data, this.receiveDataLength)
         }
         this.receiveDataLength += first.byteLength
-        if(this.receiveDataLength == this.dataView?.byteLength) {//说明这一包数据完了,要解析
+        if (this.receiveDataLength == this.dataView?.byteLength) { //说明这一包数据完了,要解析
           this.parseWithData(this.dataView?.buffer.slice(0))
           this.receiveDataLength = 0;
           this.dataView = undefined;
         }
-        if (index < originData.byteLength) {//说明，还有剩余的，要重新解析
+        if (index < originData.byteLength) { //说明，还有剩余的，要重新解析
           let second = originData.slice(index, originData.byteLength);
           this.parseWithData(second);
         }
-      } else {//说明没有包头
+      } else { //说明没有包头
         let data = new Uint8Array(originData)
         if (this.dataView != undefined) {
           this.dataView.set(data, this.receiveDataLength)
         }
         this.receiveDataLength += originData.byteLength
-        if(this.receiveDataLength == this.dataView?.byteLength) {//说明这一包数据完了,要解析
+        if (this.receiveDataLength == this.dataView?.byteLength) { //说明这一包数据完了,要解析
           this.parseWithData(this.dataView?.buffer.slice(0))
           this.receiveDataLength = 0;
           this.dataView = undefined;
@@ -168,9 +168,9 @@ class HmTcpClient {
         if (object != undefined) {
           let map: Map<string, string | number> = new Map(Object.entries(object));
           let keys = map.keys()
-          let hashMap:HashMap<string,string | number> = new HashMap()
-          for(let key of keys) {
-            hashMap.set(key,map.get(key))
+          let hashMap: HashMap<string, string | number> = new HashMap()
+          for (let key of keys) {
+            hashMap.set(key, map.get(key))
           }
           this.callback(undefined, hashMap);
         } else {
@@ -194,6 +194,13 @@ class HmTcpClient {
   }
 
   async sendCmd(msg: HmAPSDKInterface.HmAPCmd, callback?: tcpCallback): Promise<void> {
+    let state = await this.tcp.getState();
+    if (!state.isConnected) {
+      if (callback != undefined) {
+        this.didCallback(100,"与设备连接已断开，请重新连接")
+      }
+      return;
+    }
     this.callback = callback
     let strUtil: AegStrUtil = new AegStrUtil()
     //消息体
@@ -244,7 +251,7 @@ class HmTcpClient {
     let tcpSendOptions: socket.TCPSendOptions = {
       data: resultView.buffer
     }
-    tcp.send(tcpSendOptions).then(() => {
+    this.tcp.send(tcpSendOptions).then(() => {
       console.log('HomeMate send success')
     }).catch((err: BusinessError) => {
       if (this.callback != undefined) {

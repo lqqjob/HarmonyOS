@@ -1,4 +1,4 @@
-import HomeMateAPSDK from 'package/src/main/ets/utils/HomeMateSDK';
+import HomeMateAPSDK from 'package/src/main/ets/utils/HomeMateSDK'
 import { HashMap } from '@kit.ArkTS';
 
 
@@ -10,7 +10,7 @@ export function GetWiFiListPageBuilder(name: string, param: Object) {
 @Component
 export struct GetWiFiListPage {
   pageInfos: NavPathStack = new NavPathStack()
-  @State wifiList: Array<HashMap<string, string | number> | undefined> = new Array()
+  @State wifiList: Array<HashMap<string, string | number> | undefined | object> = new Array()
   private mac: string = ''
 
   build() {

@@ -1,12 +1,18 @@
 import { router } from '@kit.ArkUI';
 import HomeMateAPSDK from 'package/src/main/ets/utils/HomeMateSDK';
+import { systemDateTime } from '@kit.BasicServicesKit';
 
+@Builder
+export function IndexBuilder(name: string, param: Object) {
+  Index()
+}
 @Entry
 @Component
 struct Index {
   @State message: string = 'Hello World'
   @State next: boolean = false
-pageInfos:NavPathStack = new NavPathStack()
+  pageInfos: NavPathStack = new NavPathStack()
+
   build() {
     Navigation(this.pageInfos) {
       Column() {
@@ -54,7 +60,10 @@ pageInfos:NavPathStack = new NavPathStack()
           .width('40%')
           .height('50')
           .onClick(() => {
-            this.pageInfos.pushPathByName("Second",null)
+            this.pageInfos.pushPathByName("Second", null)
+            setTimeout(()=>{
+              this.next = false
+            },1000)
           })
         }
       }
