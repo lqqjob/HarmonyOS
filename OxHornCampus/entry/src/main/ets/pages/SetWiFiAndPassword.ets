@@ -1,3 +1,4 @@
+import { HmacAlg } from '@hw-agconnect/petal-aegis/src/main/c/a/e3/f3'
 import HomeMateAPSDK from 'package/src/main/ets/utils/HomeMateSDK'
 
 @Builder
@@ -11,6 +12,7 @@ export struct SetWiFiAndPassword {
   private mac: string = ""
   private password?: string
   private intervalId?: number
+  private textInputController:TextInputController = new TextInputController()
   @State private ssid: string = ""
   @State private showCheckOnlineBtn: boolean = false
 
@@ -27,7 +29,7 @@ export struct SetWiFiAndPassword {
         .height("40")
         .textAlign(TextAlign.Center)
 
-        TextInput({ placeholder: "请输入密码" })
+        TextInput({ placeholder: "请输入密码",controller:this.textInputController })
           .onChange((value: string) => {
             this.password = value;
           })
@@ -44,8 +46,10 @@ export struct SetWiFiAndPassword {
         .height('50')
         .padding({ left: 10, right: 10 })
         .onClick(() => {
+          this.textInputController.stopEditing()
           HomeMateAPSDK.setWiFi(this.ssid, this.password, (e, data) => {
             if (e !== undefined) {
+              HomeMateAPSDK.disConnect()
               AlertDialog.show({
                 title: e.name,
                 message: e.message,

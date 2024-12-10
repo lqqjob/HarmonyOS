@@ -7,11 +7,7 @@ import { cryptoFramework } from '@kit.CryptoArchitectureKit';
 
 class HomeMateSDK {
   connect(callback?: tcpCallback) {
-    TcpClient.connectToDevice((e) => {
-      if (callback !== undefined) {
-        callback(e)
-      }
-    });
+    TcpClient.connectToDevice(callback);
   }
 
   getDeviceInfo(callback?: tcpCallback) {
@@ -41,6 +37,10 @@ class HomeMateSDK {
       }
     }
     TcpClient.sendCmd(setWiFiCmd, callback)
+  }
+
+  disConnect(){
+    TcpClient.disConnect()
   }
 
   checkOnlineForMac(mac: string, callback?: tcpCallback) {

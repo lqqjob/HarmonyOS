@@ -209,6 +209,10 @@ class HmTcpClient {
     this.sendData(msgBodyByte);
   }
 
+  disConnect(){
+    this.tcp.close()
+  }
+
   private async sendData(msgBodyByte: Uint8Array) {
     let strUtil: AegStrUtil = new AegStrUtil()
     //数据头
